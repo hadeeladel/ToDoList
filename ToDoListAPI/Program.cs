@@ -11,10 +11,11 @@ builder.Services.AddDbContext<ListDB>(Options => Options.UseSqlServer(listdbstri
 builder.Services.AddDbContext<DBcontext>(Options => Options.UseSqlServer(dbcontextstring));
 builder.Services.AddIdentity<IdentityUser,IdentityRole>(Options => Options.SignIn.RequireConfirmedAccount = true)
     .AddRoles<IdentityRole>().AddEntityFrameworkStores<DBcontext>();
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddAuthentication();
-builder.Services.AddAuthentication();
+builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
