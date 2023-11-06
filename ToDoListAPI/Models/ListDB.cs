@@ -11,6 +11,11 @@ namespace ToDoListAPI.Models;
 
 public class ListDB :DbContext
 {
+
+    public ListDB(DbContextOptions<ListDB> options) : base(options)
+    {
+        
+    }
     public DbSet<task> Tasks { get; set; }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
