@@ -14,6 +14,9 @@ public class task
     public int TaskId { get; set; }
     [Required]
     [MaxLength(100)]
+    public string UserId { get; set; }
+
+    [Required]
     public string TaskName { get; set; }
 
     [MaxLength(200)]

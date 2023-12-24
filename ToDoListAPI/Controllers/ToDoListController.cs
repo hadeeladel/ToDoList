@@ -9,18 +9,22 @@ using System.Reflection.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
 using ToDoListAPI.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using ToDoListAPI.Repositories;
+using System.Security.Policy;
 
 namespace ToDoListAPI.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class ToDoList : Controller
 {
-    private readonly ListDB db;
-    public ToDoList(ListDB _db)
+    private readonly ItaskRepository _repository;
+
+    public ToDoList(ItaskRepository repository)
     {
-        this.db = _db;
+        this._repository =repository;
     }
 
     [HttpGet]
@@ -28,27 +32,24 @@ public class ToDoList : Controller
     //[Route("api/[controller]")]
     public List<task> Get()
     {
-            IQueryable<task>? tasks =db.Tasks;
-            List<task> result =new List<task>();
-            foreach(task t in tasks)
-            {
-                result.Add(t);
-            }
+        //decode the token in the request to find the user name
+        //get the id of the username
+        //return the task that has the userID the same as the id in the toke
+        //so that the user can acces just the list he created 
+        var result =_repository.getTasksOfUser("");
         return result;
     }
 
-    [Authorize]
     [HttpPost("update")]
     public IActionResult Update(string taskname,bool newState) { 
       
-           task? updatetask=db.Tasks.FirstOrDefault(t=>t.TaskName.StartsWith(taskname));
-            if (updatetask == null)
+          var result=_repository.updateTask("",taskname,newState);
+            if (result.Item1 == null)
             {
                 return StatusCode(StatusCodes.Status404NotFound);
             }
-            updatetask.Finished = newState;
-            int result=db.SaveChanges();
-            if(result==1) { return StatusCode(StatusCodes.Status202Accepted); }
+            int saved=_repository.commit();
+            if(saved == 1) { return StatusCode(StatusCodes.Status202Accepted); }
             else { return StatusCode(StatusCodes.Status304NotModified); }
     }
 
@@ -57,10 +58,12 @@ public class ToDoList : Controller
     [Route("Add")]
     public IActionResult AddTask(string taskName,string taskDescription ,bool tFinished)
     {
+        //decode the token in the request to find the user name
+        //get the id of the username
+        //add a new task with the userId feild being the user that send the request
 
-            task newtask = new() { TaskName =taskName, TaskDescription = taskDescription, Finished = tFinished };
-            db.Tasks.Add(newtask);
-            int done = db.SaveChanges();
+            var newtask=_repository.addTask("",taskName,taskDescription,tFinished);
+            int done =_repository.commit();
             if(done == 1) { return StatusCode(StatusCodes.Status201Created); }
             else { return StatusCode(StatusCodes.Status500InternalServerError); }
         
@@ -71,18 +74,15 @@ public class ToDoList : Controller
     [Route("Delete/Name")]
     public IActionResult Delete(string taskName)
     {
- 
-            IQueryable<task>? de=db.Tasks.Where(c=>c.TaskName.StartsWith(taskName));
-            if (de is null)
+
+       bool resutl= _repository.deleteTask("", taskName);
+            if (!resutl)
             { return StatusCode(StatusCodes.Status404NotFound); }
-            else
-            {
-                db.RemoveRange(de);
-                int result = db.SaveChanges();
-                return StatusCode(StatusCodes.Status200OK);
-            }
-            
-        
+              int done =_repository.commit();
+            if (done == 1) { return StatusCode(StatusCodes.Status200OK); }
+            else { return StatusCode(StatusCodes.Status500InternalServerError); }
+       
+                     
     }
 
 
