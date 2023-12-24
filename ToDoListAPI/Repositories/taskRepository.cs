@@ -4,8 +4,8 @@ namespace ToDoListAPI.Repositories
 {
     public class taskRepository : ItaskRepository
     {
-        private readonly ListDB dB;
-        public taskRepository(ListDB listDB)
+        private readonly DBcontext dB;
+        public taskRepository(DBcontext listDB)
         {
             this.dB = listDB;
         }
@@ -25,7 +25,7 @@ namespace ToDoListAPI.Repositories
 
         public bool deleteTask(string userId, string taskname)
         {
-            var Dtask = dB.Tasks.Where(q => q.TaskName.Equals(taskname));
+            var Dtask = dB.Tasks.Where(q => q.TaskName.Equals(taskname) && q.UserId.Equals(userId));
             if (Dtask != null)
             {
                 dB.RemoveRange(Dtask);
@@ -40,12 +40,12 @@ namespace ToDoListAPI.Repositories
             return dB.Tasks.Where(q => q.UserId.Equals(userid)).ToList();
         }
 
-        public (task, bool) updateTask(string userId, string taskname, bool newState)
+        public task updateTask(string userId, string taskname, bool newState)
         {
-            var t = dB.Tasks.FirstOrDefault(t => t.TaskName.StartsWith(taskname));
-            if(t == null) { return (null, false); }
-            t.Finished = newState;
-            return (t, true);
+            var t = dB.Tasks.FirstOrDefault(t => t.TaskName.StartsWith(taskname) && t.UserId.Equals(userId));
+            if(t == null) { return null; }
+            t.Finished= newState;
+            return t;
 
         }
     }
