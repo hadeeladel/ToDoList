@@ -15,9 +15,11 @@ builder.Services.AddDbContext<ListDB>(Options => Options.UseSqlServer(listdbstri
 builder.Services.AddDbContext<DBcontext>(Options => Options.UseSqlServer(dbcontextstring));
 builder.Services.AddScoped<ItaskRepository, taskRepository>();
 builder.Services.AddIdentity<IdentityUser,IdentityRole>(Options => Options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<DBcontext>();
+    .AddRoles<IdentityRole>().AddEntityFrameworkStores<DBcontext>();
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
   .AddJwtBearer(options => {
@@ -47,7 +49,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
