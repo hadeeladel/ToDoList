@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using System.Reflection;
 using System.Text;
 using ToDoListAPI.Models;
 using ToDoListAPI.Repositories;
@@ -14,6 +15,8 @@ string dbcontextstring = builder.Configuration.GetConnectionString("SqlConnectio
 builder.Services.AddDbContext<ListDB>(Options => Options.UseSqlServer(listdbstring));
 builder.Services.AddDbContext<DBcontext>(Options => Options.UseSqlServer(dbcontextstring));
 builder.Services.AddScoped<ItaskRepository, taskRepository>();
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+
 builder.Services.AddIdentity<IdentityUser,IdentityRole>(Options => Options.SignIn.RequireConfirmedAccount = true)
     .AddRoles<IdentityRole>().AddEntityFrameworkStores<DBcontext>();
 
