@@ -14,6 +14,9 @@ using ToDoListAPI.Repositories;
 using System.Security.Policy;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
+using MediatR;
+using ToDoListAPI.Commands;
+using ToDoListAPI.Queries;
 
 namespace ToDoListAPI.Controllers;
 
@@ -22,41 +25,32 @@ namespace ToDoListAPI.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class ToDoList : Controller
 {
-    private readonly ItaskRepository _repository;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly IMediator _mediator;
 
-    public ToDoList(ItaskRepository repository,UserManager<IdentityUser> userManager)
+    public ToDoList(IMediator mediator)
     {
-        this._repository =repository;
-        this._userManager =userManager;
+        this._mediator = mediator;
     }
 
     [HttpGet]
 
     //[Route("api/[controller]")]
-    public IActionResult Get()
+    public async Task<IActionResult> Get()
     {
-        //decode the token in the request to find the user name
-        //get the id of the username
-        //return the task that has the userID the same as the id in the toke
-        //so that the user can acces just the list he created 
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var result =_repository.getTasksOfUser(userId);
-        return Ok(result);
+        string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var items = await _mediator.Send(new GetItemByUserIdQuery(userId));
+        return Ok(items);
     }
 
     [HttpPost("update")]
     public IActionResult Update(string taskname,bool newState) {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var result=_repository.updateTask(userId,taskname,newState);
+        var result = _mediator.Send(new EditItemCommand(userId,taskname,newState));
             if (result == null)
             {
                 return NotFound();
-                //return StatusCode(StatusCodes.Status404NotFound);
             }
-            int saved=_repository.commit();
-            if(saved == 1) { return Accepted(result); }
-            else { return StatusCode(StatusCodes.Status304NotModified); }
+        return Accepted(result);
     }
 
 
@@ -64,13 +58,10 @@ public class ToDoList : Controller
     [Route("Add")]
     public IActionResult AddTask(string taskName,string taskDescription ,bool tFinished)
     {
-        //decode the token in the request to find the user name
-        //get the id of the username
-        //add a new task with the userId feild being the user that send the request
+            //get userID from token
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var newtask=_repository.addTask(userId, taskName,taskDescription,tFinished);
-            int done =_repository.commit();
-            if(done == 1 && newtask.Item2) { return Ok(newtask.Item1); }
+            var result = _mediator.Send(new AddItemCommand(userId, taskName, taskDescription, tFinished));
+            if(result.Result != null) { return Ok(result.Result); }
             else { return StatusCode(StatusCodes.Status500InternalServerError); }
         
 
@@ -81,13 +72,10 @@ public class ToDoList : Controller
     public IActionResult Delete(string taskName)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        bool resutl= _repository.deleteTask(userId, taskName);
-            if (!resutl)
+        Task<bool> result=_mediator.Send(new DeleteItemCommand(userId, taskName));
+            if (!result.Result)
             { return StatusCode(StatusCodes.Status404NotFound); }
-              int done =_repository.commit();
-            if (done == 1) { return StatusCode(StatusCodes.Status200OK); }
-            else { return StatusCode(StatusCodes.Status500InternalServerError); }
-       
+            return StatusCode(StatusCodes.Status200OK); 
                      
     }
 

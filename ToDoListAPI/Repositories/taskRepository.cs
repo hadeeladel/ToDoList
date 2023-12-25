@@ -10,11 +10,18 @@ namespace ToDoListAPI.Repositories
             this.dB = listDB;
         }
 
-        public (task, bool) addTask(string userId, string taskName, string taskDescription, bool tFinished)
+        public task addTask(string userId, string taskName, string taskDescription, bool tFinished)
         {
             task newtask = new() { UserId = userId, TaskName = taskName, TaskDescription = taskDescription, Finished=tFinished };
-            dB.Add(newtask);
-            return (newtask, true);
+            try
+            {
+                dB.Add(newtask);
+            }
+            catch(Exception ex) {
+                return null;
+            }
+            return newtask;
+
 
         }
 
